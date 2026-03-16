@@ -3,6 +3,12 @@ import path from 'node:path'
 
 const DIFF_COVERAGE_IGNORE_LINE_TOKEN = 'diff-coverage-ignore-line:'
 
+export function buildGitDiffRevisionArgs(base, head, mode = 'merge-base') {
+  return mode === 'exact'
+    ? [base, head]
+    : [`${base}...${head}`]
+}
+
 export function parseChangedLineMap(diff, isTrackedComponentSourceFile) {
   const lineMap = new Map()
   let currentFile = null
@@ -100,7 +106,7 @@ export function getChangedStatementCoverage(entry, changedLines) {
       continue
     }
 
-    uncoveredLines.push(statement.start.line)
+    uncoveredLines.push(getFirstChangedLineInRange(statement, normalizedChangedLines))
   }
 
   return {
@@ -111,6 +117,7 @@ export function getChangedStatementCoverage(entry, changedLines) {
 }
 
 export function getChangedBranchCoverage(entry, changedLines) {
+  const normalizedChangedLines = [...(changedLines ?? [])].sort((a, b) => a - b)
   if (!entry) {
     return {
       covered: 0,
@@ -141,7 +148,7 @@ export function getChangedBranchCoverage(entry, changedLines) {
       const location = locations[armIndex] ?? branch.loc ?? branch
       uncoveredBranches.push({
         armIndex,
-        line: getLocationStartLine(location) ?? branch.line ?? 1,
+        line: getFirstChangedLineInRange(location, normalizedChangedLines, branch.line ?? 1),
       })
     }
   }
@@ -245,6 +252,20 @@ function rangeIntersectsChangedLines(location, changedLines) {
   }
 
   return false
+}
+
+function getFirstChangedLineInRange(location, changedLines, fallbackLine = 1) {
+  const startLine = getLocationStartLine(location)
+  const endLine = getLocationEndLine(location) ?? startLine
+  if (!startLine || !endLine)
+    return startLine ?? fallbackLine
+
+  for (const lineNumber of changedLines) {
+    if (lineNumber >= startLine && lineNumber <= endLine)
+      return lineNumber
+  }
+
+  return startLine ?? fallbackLine
 }
 
 function getLocationStartLine(location) {
