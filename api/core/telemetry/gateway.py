@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any
 
 from core.ops.entities.trace_entity import TraceTaskName
 from extensions.ext_storage import storage
+from enterprise.telemetry.contracts import SignalType
 
 if TYPE_CHECKING:
     from core.ops.ops_trace_manager import TraceQueueManager
@@ -171,7 +172,7 @@ def emit(
         logger.debug("Dropping EE-only event: case=%s (EE disabled)", case)
         return
 
-    if route.signal_type == "trace":
+    if route.signal_type == SignalType.TRACE:
         _emit_trace(case, context, payload, trace_manager)
     else:
         _emit_metric_log(case, context, payload)
