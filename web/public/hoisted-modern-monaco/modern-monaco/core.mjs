@@ -287,8 +287,9 @@ function hydrate(options) {
   return lazy(options);
 }
 async function loadMonaco(highlighter, workspace, lsp) {
-  let editorCoreModuleUrl = new URL("./editor-core.mjs", import.meta.url).toString();
-  let lspModuleUrl = new URL("./lsp/index.mjs", import.meta.url).toString();
+  let cdnUrl = `https://esm.sh/modern-monaco@${version}`;
+  let editorCoreModuleUrl = `${cdnUrl}/es2022/editor-core.mjs`;
+  let lspModuleUrl = `${cdnUrl}/es2022/lsp.mjs`;
   let importmapEl = null;
   if (importmapEl = document.querySelector("script[type='importmap']")) {
     try {

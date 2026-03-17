@@ -108,7 +108,6 @@ export const ModernMonacoEditor: FC<ModernMonacoEditorProps> = ({
   const { theme: appTheme } = useTheme()
   const resolvedTheme = appTheme === Theme.light ? LIGHT_THEME_ID : DARK_THEME_ID
   const [isEditorReady, setIsEditorReady] = useState(false)
-  const [isEditorInitFailed, setIsEditorInitFailed] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null)
   const modelRef = useRef<MonacoEditor.ITextModel | null>(null)
@@ -154,50 +153,41 @@ export const ModernMonacoEditor: FC<ModernMonacoEditorProps> = ({
     let cleanup: (() => void) | undefined
 
     const setup = async () => {
-      try {
-        setIsEditorInitFailed(false)
-        const monaco = await initMonaco()
-        if (!monaco || disposed || !containerRef.current)
-          return
+      const monaco = await initMonaco()
+      if (!monaco || disposed || !containerRef.current)
+        return
 
-        monacoRef.current = monaco
+      monacoRef.current = monaco
 
-        const editor = monaco.editor.create(containerRef.current, setupRef.current.editorOptions)
-        editorRef.current = editor
+      const editor = monaco.editor.create(containerRef.current, setupRef.current.editorOptions)
+      editorRef.current = editor
 
-        const model = monaco.editor.createModel(valueRef.current, setupRef.current.language)
-        modelRef.current = model
+      const model = monaco.editor.createModel(valueRef.current, setupRef.current.language)
+      modelRef.current = model
 
-        editor.setModel(model)
+      editor.setModel(model)
 
-        monaco.editor.setTheme(setupRef.current.resolvedTheme)
+      monaco.editor.setTheme(setupRef.current.resolvedTheme)
 
-        const disposeCallbacks = bindEditorCallbacks(
-          editor,
-          monaco,
-          callbacksRef,
-          preventTriggerChangeEventRef,
-        )
-        const resizeObserver = new ResizeObserver(() => {
-          editor.layout()
-        })
-        resizeObserver.observe(containerRef.current)
-        callbacksRef.current.onReady?.(editor, monaco)
-        setIsEditorReady(true)
+      const disposeCallbacks = bindEditorCallbacks(
+        editor,
+        monaco,
+        callbacksRef,
+        preventTriggerChangeEventRef,
+      )
+      const resizeObserver = new ResizeObserver(() => {
+        editor.layout()
+      })
+      resizeObserver.observe(containerRef.current)
+      callbacksRef.current.onReady?.(editor, monaco)
+      setIsEditorReady(true)
 
-        cleanup = () => {
-          resizeObserver.disconnect()
-          disposeCallbacks()
-          editor.dispose()
-          model.dispose()
-          setIsEditorReady(false)
-          setIsEditorInitFailed(false)
-        }
-      }
-      catch (error) {
-        console.error('[modern-monaco] failed to initialize editor', error)
+      cleanup = () => {
+        resizeObserver.disconnect()
+        disposeCallbacks()
+        editor.dispose()
+        model.dispose()
         setIsEditorReady(false)
-        setIsEditorInitFailed(true)
       }
     }
 
@@ -250,7 +240,7 @@ export const ModernMonacoEditor: FC<ModernMonacoEditorProps> = ({
         ref={containerRef}
         className="h-full w-full"
       />
-      {!isEditorReady && !isEditorInitFailed && !!loading && (
+      {!isEditorReady && !!loading && (
         <div className="absolute inset-0 flex items-center justify-center">
           {loading}
         </div>
