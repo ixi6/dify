@@ -12,6 +12,7 @@ export const LIGHT_THEME_ID = 'light-plus'
 export const DARK_THEME_ID = 'dark-plus'
 
 const assetPath = (pathname: string) => `${basePath}${HOIST_BASE_PATH}${pathname}`
+const modernMonacoEntryPath = assetPath('/modern-monaco/index.mjs')
 const themeAssetPath = (themeId: string) => assetPath(`/tm-themes@${TM_THEMES_VERSION}/themes/${themeId}.json`)
 const grammarAssetPath = (languageId: string) => assetPath(`/tm-grammars@${TM_GRAMMARS_VERSION}/grammars/${languageId}.json`)
 
@@ -26,7 +27,10 @@ let monacoInitPromise: Promise<typeof import('modern-monaco/editor-core') | null
 export const initMonaco = async () => {
   if (!monacoInitPromise) {
     monacoInitPromise = (async () => {
-      const { init } = await import('modern-monaco')
+      const { init } = await import(
+        /* webpackIgnore: true */
+        modernMonacoEntryPath,
+      ) as typeof import('modern-monaco')
       return init(DEFAULT_INIT_OPTIONS)
     })()
   }

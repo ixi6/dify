@@ -222,6 +222,22 @@ async function patchShikiAssetLoaders(shikiFilePath: string) {
   await writeFile(shikiFilePath, next)
 }
 
+async function patchCoreModuleLoaders(coreFilePath: string) {
+  const original = await readFile(coreFilePath, 'utf8')
+  const next = original.replace(
+    `  let cdnUrl = \`https://esm.sh/modern-monaco@\${version}\`;
+  let editorCoreModuleUrl = \`\${cdnUrl}/es2022/editor-core.mjs\`;
+  let lspModuleUrl = \`\${cdnUrl}/es2022/lsp.mjs\`;`,
+    `  let editorCoreModuleUrl = new URL("./editor-core.mjs", import.meta.url).toString();
+  let lspModuleUrl = new URL("./lsp/index.mjs", import.meta.url).toString();`,
+  )
+
+  if (next === original)
+    throw new Error('Failed to patch modern-monaco core module loaders')
+
+  await writeFile(coreFilePath, next)
+}
+
 async function writeManifest(filePath: string, manifest: object) {
   await writeFile(filePath, `${JSON.stringify(manifest, null, 2)}\n`)
 }
@@ -301,6 +317,7 @@ async function main() {
   await rm(MODERN_MONACO_PUBLIC_DIR, { force: true, recursive: true })
   await cp(MODERN_MONACO_DIST_DIR, MODERN_MONACO_PUBLIC_DIR, { recursive: true })
   await patchShikiAssetLoaders(path.join(MODERN_MONACO_PUBLIC_DIR, 'shiki.mjs'))
+  await patchCoreModuleLoaders(path.join(MODERN_MONACO_PUBLIC_DIR, 'core.mjs'))
 
   log(`Downloading typescript ESM -> ${localTypeScriptPath}`)
   await writeResponseToFile(`${ESM_SH}${localTypeScriptPath}`, typeScriptPublicPath)
